@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RentalsManager from '../components/managers/RentalsManager.vue';
+---
+
+<Layout title="nav.rentals" currentPage="rentals">
+  <RentalsManager client:load />
+</Layout>

@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ClientsManager from '../components/managers/ClientsManager.vue';
+---
+
+<Layout title="nav.clients" currentPage="clients">
+  <ClientsManager client:load />
+</Layout>

@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import AdminWrapper from '../components/admin/AdminWrapper.vue';
+---
+
+<AdminLayout title="Super Admin Panel" currentPage="admin">
+  <AdminWrapper client:only />
+</AdminLayout>

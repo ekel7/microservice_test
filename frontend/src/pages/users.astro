@@ -1,0 +1,9 @@
+---
+import Layout from '../layouts/Layout.astro';
+import UsersManager from '../components/managers/UsersManager.vue';
+---
+
+<Layout title="nav.users" currentPage="users">
+  <UsersManager client:load />
+</Layout>
+

@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DashboardContent from '../components/common/DashboardContent.vue';
+---
+
+<Layout title="nav.dashboard" currentPage="dashboard">
+  <DashboardContent client:load />
+</Layout>

@@ -1,0 +1,69 @@
+---
+import '../styles/global.css';
+import DynamicTitle from '../components/layout/DynamicTitle.vue';
+import AdminNavigation from '../components/admin/AdminNavigation.vue';
+import { defaultLang } from "../i18n/ui";
+
+export interface Props {
+  title?: string;
+  currentPage?: string;
+}
+
+const { title, currentPage } = Astro.props;
+
+// Check if this is the admin login page (no navigation needed)
+const isAdminLoginPage = currentPage === 'admin-login';
+---
+
+<!doctype html>
+<html lang={defaultLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Tennis Court Rental Management System - Admin Panel" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen bg-primary">
+    <DynamicTitle title="admin.panel.title" client:only />
+    
+    {!isAdminLoginPage && currentPage !== 'admin' && (
+      <AdminNavigation currentPage={currentPage} client:load />
+    )}
+    
+    {isAdminLoginPage ? (
+      <slot />
+    ) : (
+      <main class={currentPage === 'admin' ? '' : 'container mx-auto px-4 py-6'}>
+        <div class={currentPage === 'admin' ? '' : 'bg-card rounded-lg shadow-lg border border-gray-600 min-h-[calc(100vh-8rem)]'}>
+          <slot />
+        </div>
+      </main>
+    )}
+
+    <!-- Script to handle HTML lang attribute updates and admin-specific functionality -->
+    <script>
+      import { defaultLang } from "../i18n/ui";
+      
+      // Update HTML lang attribute when language changes
+      function updateHtmlLang(lang) {
+        document.documentElement.lang = lang;
+      }
+
+      // Listen for language changes
+      window.addEventListener('languageChanged', (event) => {
+        updateHtmlLang(event['detail'].lang);
+      });
+
+      // Also listen for storage changes (in case language is changed in another tab)
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'language' && event.newValue) {
+          updateHtmlLang(event.newValue);
+        }
+      });
+
+      // Set initial language based on localStorage
+      const currentLang = localStorage.getItem('language') || defaultLang;
+      updateHtmlLang(currentLang);
+    </script>
+  </body>
+</html>

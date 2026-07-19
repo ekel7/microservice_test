@@ -1,0 +1,89 @@
+---
+import '../styles/global.css';
+import DynamicTitle from '../components/layout/DynamicTitle.vue';
+import Navigation from '../components/layout/Navigation.vue';
+import ToastContainer from '../components/common/ToastContainer.vue';
+import { defaultLang } from "../i18n/ui";
+
+export interface Props {
+  title?: string;
+  currentPage?: string;
+}
+
+const { title, currentPage } = Astro.props;
+
+// Check if this is a protected page (not login page)
+const isProtectedPage = currentPage != 'login';
+---
+
+<!doctype html>
+<html lang={defaultLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Tennis Court Rental Management System" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2D3748" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      /* Prevent flash of unstyled content */
+      body { background-color: #2D3748; margin: 0; }
+      .main-content { opacity: 0; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-primary">
+    <DynamicTitle title={title} client:only />
+    {isProtectedPage && (
+      <Navigation currentPage={currentPage} client:load />
+    )}
+    <main class="main-content">
+      <slot />
+    </main>
+    
+    <!-- Toast notifications -->
+    <ToastContainer client:load />
+
+    <!-- Script to handle HTML lang attribute updates and smooth navigation -->
+    <script>
+      import { defaultLang } from "../i18n/ui";
+      
+      // Update HTML lang attribute when language changes
+      function updateHtmlLang(lang) {
+        document.documentElement.lang = lang;
+      }
+
+      // Listen for language changes
+      window.addEventListener('languageChanged', (event) => {
+        updateHtmlLang(event['detail'].lang);
+      });
+
+      // Also listen for storage changes (in case language is changed in another tab)
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'language' && event.newValue) {
+          updateHtmlLang(event.newValue);
+        }
+      });
+
+      // Set initial language based on localStorage
+      const currentLang = localStorage.getItem('language') || defaultLang;
+      updateHtmlLang(currentLang);
+
+      // Smooth navigation without loading screens
+      document.addEventListener('click', function(event) {
+        const link = event.target.closest('a[href]');
+        if (link && link.href && !link.href.startsWith('#') && !link.target && !link.href.includes('javascript:')) {
+          const currentOrigin = window.location.origin;
+          const linkOrigin = new URL(link.href).origin;
+          
+          // Only handle internal navigation
+          if (linkOrigin === currentOrigin && link.href !== window.location.href) {
+            // Add visual feedback without blocking navigation
+            link.style.opacity = '0.7';
+            
+            // Let the browser handle the navigation naturally
+            // The new page will fade in smoothly when it loads
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

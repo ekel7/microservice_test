@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import AdminLoginForm from '../components/admin/AdminLoginForm.vue';
+---
+
+<AdminLayout title="Super Admin Login" currentPage="admin-login">
+  <AdminLoginForm client:load />
+</AdminLayout>
