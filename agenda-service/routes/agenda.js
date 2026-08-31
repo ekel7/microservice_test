@@ -168,7 +168,7 @@ router.post('/rentals', async (req, res) => {
       .select('id, start_datetime, end_datetime')
       .eq('court_id', court_id)
       .eq('account_id', req.user.account_id)
-      .neq('status', 'cancelled');
+      .or('status.neq.cancelled,status.is.null');
 
     if (overlapError) {
       return res.status(500).json({ error: 'Error checking availability' });
@@ -199,8 +199,8 @@ router.post('/rentals', async (req, res) => {
         end_datetime,
         total_amount,
         notes,
-        status,
-        is_recurring
+        status: status ?? 'pending',
+        is_recurring: is_recurring ?? false
       }])
       .select(`
         id,
@@ -465,7 +465,10 @@ router.put('/rentals/:id', async (req, res) => {
     }
 
     // Handle regular update or series-wide update
-    let updateData = { notes, status, is_recurring };
+    let updateData = {};
+    if (notes !== undefined) updateData.notes = notes;
+    if (status !== undefined) updateData.status = status;
+    if (is_recurring !== undefined) updateData.is_recurring = is_recurring;
 
     // If datetime or court is being changed, validate and recalculate
     if (start_datetime || end_datetime || court_id) {
@@ -484,7 +487,7 @@ router.put('/rentals/:id', async (req, res) => {
         .eq('court_id', newCourtId)
         .eq('account_id', req.user.account_id)
         .neq('id', id)
-        .neq('status', 'cancelled');
+        .or('status.neq.cancelled,status.is.null');
 
       if (overlapError) {
         return res.status(500).json({ error: 'Error checking availability' });
