@@ -33,7 +33,7 @@ describe('PUT /api/agenda/rentals/:id/status', () => {
 
   test('returns 404 if rental not found', async () => {
     const app = createApp({
-      rentals: { data: null, error: { message: 'Not found' } }
+      rentals: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).put(`/api/agenda/rentals/${rentalId}/status`).send({ status: 'confirmed' });
     expect(res.status).toBe(404);

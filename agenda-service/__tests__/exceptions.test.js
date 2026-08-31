@@ -8,7 +8,7 @@ describe('GET /api/agenda/rentals/:id/exceptions', () => {
 
   test('returns 404 if rental not found', async () => {
     const app = createApp({
-      rentals: { data: null, error: { message: 'Not found' } }
+      rentals: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).get(`/api/agenda/rentals/${rentalId}/exceptions`);
     expect(res.status).toBe(404);
@@ -97,7 +97,7 @@ describe('POST /api/agenda/rentals/:id/exceptions', () => {
 
   test('returns 404 if rental not found', async () => {
     const app = createApp({
-      rentals: { data: null, error: { message: 'Not found' } }
+      rentals: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).post(`/api/agenda/rentals/${rentalId}/exceptions`).send({
       exception_date: '2024-06-15',
@@ -214,7 +214,7 @@ describe('POST /api/agenda/rentals/:id/exceptions', () => {
     const app = createApp({
       rentals: [
         { data: recurringRental, error: null },
-        { data: [{ id: 'r-other' }], error: null }
+        { data: [{ id: 'r-other', start_datetime: '2024-06-15T16:30:00.000Z', end_datetime: '2024-06-15T17:30:00.000Z', status: 'confirmed' }], error: null }
       ],
       rental_exceptions: { data: null, error: null }
     });
@@ -253,7 +253,7 @@ describe('DELETE /api/agenda/rentals/:id/exceptions/:date', () => {
 
   test('returns 404 if rental not found', async () => {
     const app = createApp({
-      rentals: { data: null, error: { message: 'Not found' } }
+      rentals: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).delete(`/api/agenda/rentals/${rentalId}/exceptions/2024-06-15`);
     expect(res.status).toBe(404);

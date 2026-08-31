@@ -51,7 +51,7 @@ describe('POST /api/agenda/rentals', () => {
 
   test('returns 404 if client not found', async () => {
     const app = createApp({
-      clients: { data: null, error: { message: 'Not found' } }
+      clients: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).post('/api/agenda/rentals').send(validBody);
     expect(res.status).toBe(404);
@@ -61,7 +61,7 @@ describe('POST /api/agenda/rentals', () => {
   test('returns 404 if court not found', async () => {
     const app = createApp({
       clients: { data: clientRow, error: null },
-      courts: { data: null, error: { message: 'Not found' } }
+      courts: { data: null, error: { code: 'PGRST116', message: 'Not found' } }
     });
     const res = await request(app).post('/api/agenda/rentals').send(validBody);
     expect(res.status).toBe(404);
@@ -119,11 +119,7 @@ describe('POST /api/agenda/rentals', () => {
   });
 
   test('does not crash if broadcastRentalUpdate is not set', async () => {
-    const express = require('express');
-    const agendaRoutes = require('../routes/agenda');
-    const supabaseMock = require('./setup/supabaseMock');
-
-    supabaseMock.setConfig({
+    const app = createApp({
       clients: { data: clientRow, error: null },
       courts: { data: courtRow, error: null },
       rentals: [
@@ -131,10 +127,7 @@ describe('POST /api/agenda/rentals', () => {
         { data: createdRental, error: null }
       ]
     });
-
-    const app = express();
-    app.use(express.json());
-    app.use('/api/agenda', agendaRoutes);
+    delete app.locals.broadcastRentalUpdate;
 
     const res = await request(app).post('/api/agenda/rentals').send(validBody);
     expect(res.status).toBe(201);

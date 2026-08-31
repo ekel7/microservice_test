@@ -48,10 +48,10 @@ function createBuilder(table) {
   const builder = {
     from(t) { return createBuilder(t); },
     select() { return builder; },
-    insert() { state.operation = 'insert'; return builder; },
-    update() { state.operation = 'update'; return builder; },
+    insert(...args) { state.operation = 'insert'; state.payload = args[0]; return builder; },
+    update(...args) { state.operation = 'update'; state.payload = args[0]; return builder; },
     delete() { state.operation = 'delete'; return builder; },
-    upsert() { state.operation = 'upsert'; return builder; },
+    upsert(...args) { state.operation = 'upsert'; state.payload = args[0]; state.options = args[1]; return builder; },
     eq() { return builder; },
     neq() { return builder; },
     gte() { return builder; },

@@ -4,10 +4,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const WebSocket = require('ws');
-const { nowUTC } = require('./utils/dateUtils');
-const { dateStandardizationMiddleware, standardizeDatesInResponse } = require('./utils/responseUtils');
-
-const agendaRoutes = require('./routes/agenda');
+const { nowUTC } = require('./src/domain/services/time');
+const { dateStandardizationMiddleware, standardizeDatesInResponse } = require('./src/infrastructure/http/middleware/date-standardization');
 
 const app = express();
 const server = createServer(app);
@@ -43,7 +41,7 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     clients.delete(ws);
-    console.log('Agenda WebSocket connection closed');
+    console.log(`Agenda WebSocket client disconnected`);
   });
 
   ws.on('error', (error) => {
@@ -79,28 +77,6 @@ const broadcastRentalUpdate = (account_id, rental, type = 'rental_created') => {
 // Make broadcast function available to other modules
 app.locals.broadcastRentalUpdate = broadcastRentalUpdate;
 
-// ============================================
-// Hexagonal wiring (Phase 3 — see docs/HEXAGONAL_MIGRATION.md)
-// POST /rentals is served by the new use case; every other endpoint still
-// goes through the legacy routes until Phase 4 migrates them.
-// ============================================
-const supabase = require('./src/infrastructure/persistence/supabase-client');
-const { makeSupabaseRentalRepository } = require('./src/infrastructure/persistence/supabase-rental.repository');
-const { makeSupabaseCourtRepository } = require('./src/infrastructure/persistence/supabase-court.repository');
-const { makeSupabaseClientRepository } = require('./src/infrastructure/persistence/supabase-client.repository');
-const { makeWsNotifier } = require('./src/infrastructure/realtime/ws-notifier');
-const { makeCreateRental } = require('./src/application/use-cases/create-rental');
-const { makeAgendaRouter } = require('./src/infrastructure/http/routes/agenda.routes');
-
-const agendaHexRouter = makeAgendaRouter({
-  createRental: makeCreateRental({
-    clientRepo: makeSupabaseClientRepository({ supabase }),
-    courtRepo: makeSupabaseCourtRepository({ supabase }),
-    rentalRepo: makeSupabaseRentalRepository({ supabase }),
-  }),
-  notifier: makeWsNotifier({ broadcast: broadcastRentalUpdate }),
-});
-
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -122,9 +98,43 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // Date standardization middleware - ensure all API responses have consistent date formats
 app.use(dateStandardizationMiddleware);
 
-// Routes — hexagonal first (POST /rentals), legacy router handles the rest
-app.use('/api/agenda', agendaHexRouter);
-app.use('/api/agenda', agendaRoutes);
+// ============================================
+// Hexagonal wiring (Phase 4 — all endpoints via use cases)
+// See docs/HEXAGONAL_MIGRATION.md
+// ============================================
+const supabase = require('./src/infrastructure/persistence/supabase-client');
+const { makeSupabaseRentalRepository } = require('./src/infrastructure/persistence/supabase-rental.repository');
+const { makeSupabaseCourtRepository } = require('./src/infrastructure/persistence/supabase-court.repository');
+const { makeSupabaseClientRepository } = require('./src/infrastructure/persistence/supabase-client.repository');
+const { makeSupabaseExceptionRepository } = require('./src/infrastructure/persistence/supabase-exception.repository');
+const { makeWsNotifier } = require('./src/infrastructure/realtime/ws-notifier');
+const { makeCreateRental } = require('./src/application/use-cases/create-rental');
+const { makeUpdateRental } = require('./src/application/use-cases/update-rental');
+const { makeUpdateRentalStatus } = require('./src/application/use-cases/update-rental-status');
+const { makeGetCalendarView } = require('./src/application/use-cases/get-calendar-view');
+const { makeListExceptions } = require('./src/application/use-cases/exceptions/list-exceptions');
+const { makeCreateException } = require('./src/application/use-cases/exceptions/create-exception');
+const { makeDeleteException } = require('./src/application/use-cases/exceptions/delete-exception');
+const { makeAgendaRouter } = require('./src/infrastructure/http/routes/agenda.routes');
+
+const rentalRepo = makeSupabaseRentalRepository({ supabase });
+const courtRepo = makeSupabaseCourtRepository({ supabase });
+const clientRepo = makeSupabaseClientRepository({ supabase });
+const exceptionRepo = makeSupabaseExceptionRepository({ supabase });
+const notifier = makeWsNotifier({ broadcast: broadcastRentalUpdate });
+
+const agendaRouter = makeAgendaRouter({
+  createRental: makeCreateRental({ clientRepo, courtRepo, rentalRepo, notifier }),
+  updateRental: makeUpdateRental({ rentalRepo, courtRepo, exceptionRepo, notifier }),
+  updateRentalStatus: makeUpdateRentalStatus({ rentalRepo, exceptionRepo, notifier }),
+  getCalendarView: makeGetCalendarView({ rentalRepo, exceptionRepo }),
+  listExceptions: makeListExceptions({ rentalRepo, exceptionRepo }),
+  createException: makeCreateException({ rentalRepo, exceptionRepo }),
+  deleteException: makeDeleteException({ rentalRepo, exceptionRepo }),
+});
+
+// Routes
+app.use('/api/agenda', agendaRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

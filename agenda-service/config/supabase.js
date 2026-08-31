@@ -1,16 +1,11 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const { createClient } = require('@supabase/supabase-js');
-const ws = require('ws');
+/**
+ * Legacy re-export shim.
+ *
+ * The Supabase client is created in
+ * `src/infrastructure/persistence/supabase-client.js` (Phase 2 of the
+ * hexagonal migration — see docs/HEXAGONAL_MIGRATION.md). This keeps existing
+ * `require('../config/supabase')` call sites working until Phase 4 removes
+ * the legacy layout.
+ */
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    realtime: { transport: ws }
-});
-
-module.exports = supabase;
+module.exports = require('../src/infrastructure/persistence/supabase-client');
