@@ -27,12 +27,14 @@ function isBlocking(rental) {
  *
  * @param {object} params
  * @param {import('../model/time-range').TimeRange} params.range - requested range
- * @param {Array<{start_datetime: string, end_datetime: string, status: string|null}>} params.existing
+ * @param {Array<{id?: string, start_datetime: string, end_datetime: string, status: string|null}>} params.existing
+ * @param {string|null} [params.excludeId] - rental to ignore (self, on updates)
  * @returns {object|null} the conflicting rental, or null if the range is free
  */
-function findOverlap({ range, existing = [] }) {
+function findOverlap({ range, existing = [], excludeId = null }) {
   return (
     existing.find(rental =>
+      (!excludeId || rental.id !== excludeId) &&
       isBlocking(rental) &&
       doPeriodsOverlap(range.start, range.end, rental.start_datetime, rental.end_datetime)
     ) || null

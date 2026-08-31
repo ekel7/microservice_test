@@ -12,7 +12,8 @@ const makeSupabaseExceptionRepository = ({ supabase }) => ({
     const { data, error } = await supabase
       .from('rental_exceptions')
       .select('*')
-      .eq('rental_id', rentalId);
+      .eq('rental_id', rentalId)
+      .order('exception_date', { ascending: true });
 
     if (error) throw new Error(error.message);
     return data || [];
@@ -24,17 +25,19 @@ const makeSupabaseExceptionRepository = ({ supabase }) => ({
     const { data, error } = await supabase
       .from('rental_exceptions')
       .select('*')
-      .in('rental_id', rentalIds);
+      .in('rental_id', rentalIds)
+      .order('exception_date', { ascending: true });
 
     if (error) throw new Error(error.message);
     return data || [];
   },
 
-  async upsert(exception) {
+  async upsert(exception, options = {}) {
     const { data, error } = await supabase
       .from('rental_exceptions')
       .upsert(exception, {
-        onConflict: 'rental_id,exception_date'
+        onConflict: 'rental_id,exception_date',
+        ...options,
       })
       .select()
       .single();

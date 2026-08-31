@@ -21,9 +21,10 @@ const { NotFoundError, ValidationError } = require('../../domain/errors');
  * @param {import('../../domain/ports/client-repository').ClientRepository} deps.clientRepo
  * @param {import('../../domain/ports/court-repository').CourtRepository} deps.courtRepo
  * @param {import('../../domain/ports/rental-repository').RentalRepository} deps.rentalRepo
+ * @param {import('../../domain/ports/notification-port').NotificationPort} deps.notifier
  * @returns {(input: object) => Promise<object>} the stored rental with relations
  */
-const makeCreateRental = ({ clientRepo, courtRepo, rentalRepo }) =>
+const makeCreateRental = ({ clientRepo, courtRepo, rentalRepo, notifier }) =>
   async (input) => {
     if (!input.client_id || !input.court_id || !input.start_datetime || !input.end_datetime) {
       throw new ValidationError('Client, court, start and end datetime are required');
@@ -61,7 +62,9 @@ const makeCreateRental = ({ clientRepo, courtRepo, rentalRepo }) =>
       is_recurring: input.is_recurring,
     });
 
-    return rentalRepo.create(rental);
+    const stored = await rentalRepo.create(rental);
+    notifier.notify(input.account_id, stored, 'rental_created');
+    return stored;
   };
 
 module.exports = { makeCreateRental };

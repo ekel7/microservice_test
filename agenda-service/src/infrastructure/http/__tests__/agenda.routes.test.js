@@ -55,10 +55,11 @@ const buildApp = ({ supabaseConfig = {}, broadcast } = {}) => {
     clientRepo: makeSupabaseClientRepository({ supabase }),
     courtRepo: makeSupabaseCourtRepository({ supabase }),
     rentalRepo: makeSupabaseRentalRepository({ supabase }),
+    notifier,
   });
   const app = express();
   app.use(express.json());
-  app.use('/api/agenda', makeAgendaRouter({ createRental, notifier }));
+  app.use('/api/agenda', makeAgendaRouter({ createRental }));
   return { app, notifier };
 };
 

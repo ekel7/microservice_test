@@ -11,8 +11,10 @@
  *           All exceptions of a rental.
  * @property {(rentalIds: string[]) => Promise<Array>} listByRentalIds
  *           All exceptions of many rentals (calendar view).
- * @property {(exception: object) => Promise<object>} upsert
- *           Upserts on `rental_id,exception_date` and returns the stored row.
+ * @property {(exception: object, options?: object) => Promise<object>} upsert
+ *           Upserts on `rental_id,exception_date` (options spread into the
+ *           supabase call, e.g. `{ returning: 'representation' }`) and
+ *           returns the stored row.
  * @property {(rentalId: string, exceptionDate: string) => Promise<void>} deleteByDate
  *           Removes the exception of a specific occurrence date.
  */

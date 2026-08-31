@@ -22,13 +22,14 @@ const makeFakes = ({ clientExists = true, court = { id: 'court-1', hourly_rate: 
     listByCourt: jest.fn(async () => existing),
     create: jest.fn(async (rental) => ({ id: 'r-new', ...rental, client: {}, court: {}, user: {} })),
   };
-  const createRental = makeCreateRental({ clientRepo, courtRepo, rentalRepo });
-  return { createRental, clientRepo, courtRepo, rentalRepo };
+  const notifier = { notify: jest.fn() };
+  const createRental = makeCreateRental({ clientRepo, courtRepo, rentalRepo, notifier });
+  return { createRental, clientRepo, courtRepo, rentalRepo, notifier };
 };
 
 describe('CreateRental — orchestration', () => {
   test('happy path: persists with computed pricing and domain defaults, returns stored row', async () => {
-    const { createRental, rentalRepo } = makeFakes();
+    const { createRental, rentalRepo, notifier } = makeFakes();
 
     const result = await createRental(baseInput);
 
@@ -45,10 +46,20 @@ describe('CreateRental — orchestration', () => {
       notes: null,
     });
     expect(result.id).toBe('r-new');
+    expect(notifier.notify).toHaveBeenCalledWith('acc-1', result, 'rental_created');
+  });
+
+  test('does not notify when the rental is rejected', async () => {
+    const { createRental, notifier } = makeFakes({
+      existing: [{ id: 'r-x', start_datetime: '2026-09-01T14:00:00Z', end_datetime: '2026-09-01T16:00:00Z', status: 'confirmed' }],
+    });
+
+    await expect(createRental(baseInput)).rejects.toThrow(ConflictError);
+    expect(notifier.notify).not.toHaveBeenCalled();
   });
 
   test('provided status/notes/is_recurring are respected', async () => {
-    const { createRental, rentalRepo } = makeFakes();
+    const { createRental, rentalRepo, notifier } = makeFakes();
 
     await createRental({ ...baseInput, status: 'confirmed', notes: 'Clase', is_recurring: false });
 
@@ -56,7 +67,7 @@ describe('CreateRental — orchestration', () => {
   });
 
   test('normalizes datetimes to UTC ISO through TimeRange', async () => {
-    const { createRental, rentalRepo } = makeFakes();
+    const { createRental, rentalRepo, notifier } = makeFakes();
 
     await createRental({ ...baseInput, start_datetime: '2026-09-01T10:00:00-03:00' });
 
@@ -126,7 +137,7 @@ describe('CreateRental — overlap policy integration', () => {
   });
 
   test('overlap check queries ALL rentals of the court (filtering is domain policy)', async () => {
-    const { createRental, rentalRepo } = makeFakes();
+    const { createRental, rentalRepo, notifier } = makeFakes();
 
     await createRental(baseInput);
 
