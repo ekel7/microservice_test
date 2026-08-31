@@ -376,6 +376,6 @@ líneas; suite C en verde; deploy verificado.
 | 0 — Baseline | ⬜ pendiente (suite baseline: 52 tests OK) | — | — |
 | 1 — Dominio puro | ✅ completada | pendiente de push | `0a6df4c` + `d84b681` |
 | 2 — Puertos + Supabase | ✅ completada | pendiente de push | `7205387` |
-| 3 — CreateRental | ✅ completada | pendiente de verificación | `682e79f` |
+| 3 — CreateRental | ✅ completada | ✅ verificado en producción | `682e79f` |
 | 4 — Resto de endpoints | ⬜ pendiente | — | — |
 | 5 — Guardas y cierre | ⬜ pendiente | — | — |
