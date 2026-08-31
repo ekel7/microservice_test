@@ -373,8 +373,8 @@ líneas; suite C en verde; deploy verificado.
 
 | Fase | Estado | Deploy verificado | Commit de cierre |
 |---|---|---|---|
-| 0 — Baseline | ⬜ pendiente | — | — |
-| 1 — Dominio puro | ⬜ pendiente | — | — |
+| 0 — Baseline | ⬜ pendiente (suite baseline: 52 tests OK) | — | — |
+| 1 — Dominio puro | ✅ completada | pendiente de push | `0a6df4c` + `d84b681` |
 | 2 — Puertos + Supabase | ⬜ pendiente | — | — |
 | 3 — CreateRental | ⬜ pendiente | — | — |
 | 4 — Resto de endpoints | ⬜ pendiente | — | — |
