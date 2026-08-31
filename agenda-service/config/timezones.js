@@ -1,12 +1,7 @@
 /**
- * Timezone configuration constants
+ * Legacy re-export shim.
+ *
+ * Timezone constants are domain-owned: `src/domain/timezones.js`.
  */
 
-const TIMEZONES = {
-  DEFAULT: 'America/Argentina/Buenos_Aires',
-  ARGENTINA: 'America/Argentina/Buenos_Aires'
-};
-
-module.exports = {
-  TIMEZONES
-};
+module.exports = require('../src/domain/timezones');
