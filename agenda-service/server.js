@@ -79,6 +79,28 @@ const broadcastRentalUpdate = (account_id, rental, type = 'rental_created') => {
 // Make broadcast function available to other modules
 app.locals.broadcastRentalUpdate = broadcastRentalUpdate;
 
+// ============================================
+// Hexagonal wiring (Phase 3 — see docs/HEXAGONAL_MIGRATION.md)
+// POST /rentals is served by the new use case; every other endpoint still
+// goes through the legacy routes until Phase 4 migrates them.
+// ============================================
+const supabase = require('./src/infrastructure/persistence/supabase-client');
+const { makeSupabaseRentalRepository } = require('./src/infrastructure/persistence/supabase-rental.repository');
+const { makeSupabaseCourtRepository } = require('./src/infrastructure/persistence/supabase-court.repository');
+const { makeSupabaseClientRepository } = require('./src/infrastructure/persistence/supabase-client.repository');
+const { makeWsNotifier } = require('./src/infrastructure/realtime/ws-notifier');
+const { makeCreateRental } = require('./src/application/use-cases/create-rental');
+const { makeAgendaRouter } = require('./src/infrastructure/http/routes/agenda.routes');
+
+const agendaHexRouter = makeAgendaRouter({
+  createRental: makeCreateRental({
+    clientRepo: makeSupabaseClientRepository({ supabase }),
+    courtRepo: makeSupabaseCourtRepository({ supabase }),
+    rentalRepo: makeSupabaseRentalRepository({ supabase }),
+  }),
+  notifier: makeWsNotifier({ broadcast: broadcastRentalUpdate }),
+});
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -100,7 +122,8 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // Date standardization middleware - ensure all API responses have consistent date formats
 app.use(dateStandardizationMiddleware);
 
-// Routes
+// Routes — hexagonal first (POST /rentals), legacy router handles the rest
+app.use('/api/agenda', agendaHexRouter);
 app.use('/api/agenda', agendaRoutes);
 
 // Health check endpoint
